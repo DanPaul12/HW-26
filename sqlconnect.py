@@ -17,3 +17,6 @@ def get_db_connection():
             print("Connection succcessful")
     except Error as e:
         print({e})
+
+
+

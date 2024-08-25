@@ -27,8 +27,8 @@ def get_db_connection():
         conn = mysql.connector.connect(
             database = db_name,
             user = user,
-            host = host,
-            password = password
+            password = password,
+            host = host
         )
         if conn is not None:
             print("Connection succcessful")
