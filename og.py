@@ -1,7 +1,7 @@
 from flask import Flask, jsonify
 from flask_marshmallow import Marshmallow
 from marshmallow import fields
-from sqlconnect import get_db_connection
+import mysql.connector
 from mysql.connector import Error
 
 app = Flask(__name__)
@@ -17,6 +17,23 @@ class MemberSchema(ma.Schema):
 member_schema = MemberSchema()
 members_schema = MemberSchema(many = True)
 
+
+def get_db_connection():
+    db_name = "fitness_center_db"
+    user = "root"
+    host = "localhost"
+    password = "thegoblet2"
+    try:
+        conn = mysql.connector.connect(
+            database = db_name,
+            user = user,
+            host = host,
+            password = password
+        )
+        if conn is not None:
+            print("Connection succcessful")
+    except Error as e:
+        print({e})
 
 
 
