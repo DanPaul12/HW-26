@@ -10,7 +10,7 @@ def get_db_connection():
         conn = mysql.connector.connect(
             database = db_name,
             user = user,
-            hot = host,
+            host = host,
             password = password
         )
         if conn is not None:
