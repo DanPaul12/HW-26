@@ -272,13 +272,13 @@ def add_workout():
 def update_workout(session_id):
     try:
         workout_data = workout_schema.load(request.json)
-    except ValidationError as e:
-        return ({e})
+    except ValidationError as err:
+        return jsonify(err.messages), 400
     try:
         conn = get_db_connection()
         if conn is None:
             return jsonify({"error":"Database connection failed"}), 500
-        cursor = conn.cursor(buffered=True)
+        cursor = conn.cursor(buffered=True, dictionary = True)
         query = "UPDATE WorkoutSessions SET session_date = %s, session_time = %s, activity = %s WHERE session_id = %s"
         cursor.execute(query, (workout_data["session_date"], workout_data["session_time"], workout_data["activity"], session_id))
         conn.commit()
@@ -292,6 +292,33 @@ def update_workout(session_id):
         if conn and conn.is_connected():
             conn.close()
             cursor.close()
+
+#-----------------------------------------------------------------------
+
+@app.route('/workouts/<int:session_id>', methods = ["DELETE"])
+def delete_workout(session_id):
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"error":"Database connection failed"}), 500
+    
+    try:
+        cursor = conn.cursor()
+        query = "DELETE from WorkoutSessions where session_id = %s"
+        cursor.execute(query,(session_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"message":"workout deleted"}), 200
+    except Error as e:
+        print({e})
+        return jsonify({"error": 'internal server error'}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+            cursor.close()
+    
+        
+
+    
 
 
 if __name__ == "__main__":
