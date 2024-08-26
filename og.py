@@ -24,7 +24,7 @@ class WorkoutSchema(ma.Schema):
     activity = fields.String(required = True)
     
     class Meta:
-        fields = ("session_id", "member_id", "date", "time", "activity")
+        fields = ("session_id", "member_id", "session_date", "session_time", "activity")
 
 member_schema = MemberSchema()
 members_schema = MemberSchema(many = True)
@@ -224,7 +224,7 @@ def get_workout(session_id):
         return jsonify({"error":"Database connection failed"}), 500
     try:
         cursor = conn.cursor(dictionary = True)
-        cursor.execute("SELECT * from WorkoutSessions where id = %s", (session_id,))
+        cursor.execute("SELECT * from WorkoutSessions where session_id = %s", (session_id,))
         workout = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -238,6 +238,60 @@ def get_workout(session_id):
         if conn and conn.is_connected():
             cursor.close()
             conn.close()
+
+#-----------------------------------------------------------------------
+
+@app.route('/workouts', methods = ["POST"])
+def add_workout():
+    try:
+        workout_data = workout_schema.load(request.json)
+    except ValidationError as e:
+        return ({e})
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error":"Database connection failed"}), 500
+
+        cursor = conn.cursor(dictionary=True, buffered = True)
+        query = "INSERT INTO WorkoutSessions (member_id, session_date, session_time, activity) Values (%s, %s, %s, %s)"
+        workout = workout_data["member_id"], workout_data["session_date"], workout_data["session_time"], workout_data["activity"]
+        cursor.execute(query, workout)
+        conn.commit()
+        return jsonify({'message': 'workout added successfully'}), 201
+    except Error as e:
+        print({e})
+        return jsonify({"error": 'internal server error'}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+            cursor.close()
+
+#-----------------------------------------------------------------------
+
+@app.route('/workouts/<int:session_id>', methods = ["PUT"])
+def update_workout(session_id):
+    try:
+        workout_data = workout_schema.load(request.json)
+    except ValidationError as e:
+        return ({e})
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error":"Database connection failed"}), 500
+        cursor = conn.cursor(buffered=True)
+        query = "UPDATE WorkoutSessions SET session_date = %s, session_time = %s, activity = %s WHERE session_id = %s"
+        cursor.execute(query, (workout_data["session_date"], workout_data["session_time"], workout_data["activity"], session_id))
+        conn.commit()
+        conn.close()
+        cursor.close()
+        return jsonify({"message": 'workout updated successflly'}), 201
+    except Error as e:
+        print({e})
+        return jsonify({"error": 'internal server error'}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+            cursor.close()
 
 
 if __name__ == "__main__":
