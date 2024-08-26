@@ -316,6 +316,25 @@ def delete_workout(session_id):
             conn.close()
             cursor.close()
     
+#-----------------------------------------------------------------------
+
+@app.route('/workouts2', methods = ["GET"])
+def get_workouts_by_member():
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"error":"Database connection failed"}), 500
+    try:
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        cursor.execute("SELECT w.session_date, m.name, w.session_time, w.activity FROM WorkoutSessions w, Members m WHERE m.id = w.member_id")
+        workouts = cursor.fetchall()
+        return workouts_schema.jsonify(workouts)
+    except Error as e:
+        print({e})
+        return jsonify({"error": 'internal server error'}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+            cursor.close()
         
 
     
